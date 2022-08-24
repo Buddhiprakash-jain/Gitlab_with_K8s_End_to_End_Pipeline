@@ -1,0 +1,27 @@
+variables:
+  Registry_Path: "$CI_REGISTRY/buddhiprakash-jain/$CI_PROJECT_NAME"
+stages:
+  - build
+  - deploy
+job1:
+  tags:
+    - "os1"
+  stage: "build"
+  before_script:
+    - docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+  script:
+    - docker build -t $Registry_Path/newjava:latest .
+    - docker push $Registry_Path/newjava:latest
+
+job2:
+  stage: "deploy"
+  tags:
+    - "os2"
+  script:
+    #1. Below cmd first check deploy exist or not and save output in cmdout.txt file
+    - sudo kubectl get deploy &> cmdout.txt
+
+    #2. Below cmd compare both files and they match exactly when deploy does not exist and they create deploy and svc both if deploy already exists they release the new version
+
+    - sudo diff match.txt cmdout.txt &> /dev/null && sudo kubectl apply -f ./k8s_deploy_svc.yaml || sudo kubectl rollout restart deployment/myd
+
